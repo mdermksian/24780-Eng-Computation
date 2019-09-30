@@ -1,0 +1,19 @@
+POOL GOLF (mdermksi)
+
+GENERAL DESCRIPTION:
+This program is a hybrid of pool and golf, the goal of the game is to get each target ball (red) in the hole by hitting the cue ball (white).
+
+GAME FLOW:
+1. At first an instruction screen will appear - you can press enter or esc to exit this screen.
+2. Once you enter the main game, you can begin to play. If you'd ever like to exit, just hit esc.
+3. Use the up and down arrows to increase your power from 0-100%.
+4. Aim with your mouse cursor, and fire by left clicking on the window.
+5. There's no limit on the number of times you can try, just go until you've had enough!
+6. Each successfully potted ball will increase your score by 1.
+
+REQUIREMENTS SATISFIED:
+1. Used line stipple to show the trajectory of the cue.
+2. Used GL_LINES, GL_QUADS, and GL_TRIANGLE_FAN
+3. Used math library functions and numerical integration using euler's method.
+
+To compile please use ps05.cpp, fssimplewindow.cpp, and ysglfontdata.c

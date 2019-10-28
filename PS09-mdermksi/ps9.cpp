@@ -1,21 +1,120 @@
 #include <stdio.h>
 #include "fssimplewindow.h"
 
+class GameObject {
+public:
+	int x, y, w, h;
+};
+
+class GameObjectWithVelocity : public GameObject {
+public:
+	int vx, vy;
+};
+
+class Ball : public GameObjectWithVelocity {
+public:
+	Ball();
+	void Draw(void);
+	void Move(void);
+};
+
+class GameObjectHitTest : public GameObject {
+public:
+	int HitTest(Ball &ball);
+};
+
+int GameObjectHitTest::HitTest(Ball &ball) {
+	if(ball.x>=x && ball.x<=x+w && ball.y>=y && ball.y<=y+h)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+class Racket : public GameObjectHitTest {
+public:
+	Racket();
+	void Draw(void);
+};
+
+class Block : public GameObjectHitTest {
+public:
+	int state;
+	Block();
+	void Draw(void);
+};
+
+Ball::Ball() {
+	w = 6;
+	h = 6;
+	x = 400;
+	y = 300;
+	vx = 5;
+	vy = -5;
+}
+
+void Ball::Draw(void) {
+	glColor3ub(0,0,0);
+	glBegin(GL_QUADS);
+	glVertex2i(x-3,y-3);
+	glVertex2i(x+3,y-3);
+	glVertex2i(x+3,y+3);
+	glVertex2i(x-3,y+3);
+	glEnd();
+}
+
+void Ball::Move() {
+	x += vx;
+	y += vy;
+}
+
+Racket::Racket() {
+	w = 80;
+	h = 20;
+	x = 300;
+	y = 550;
+}
+
+void Racket::Draw(void) {
+	glColor3ub(0,0,0);
+	glBegin(GL_QUADS);
+	glVertex2i(x  , y);
+	glVertex2i(x+w, y);
+	glVertex2i(x+w, y+h);
+	glVertex2i(x  , y+h);
+	glEnd();
+}
+
+Block::Block(){
+	state = 1;
+	w = 80;
+	h = 20;
+}
+
+void Block::Draw(void) {
+	if(state == 0) { return; }
+	glColor3ub(0,0,0);
+	glBegin(GL_QUADS);
+	glVertex2i(x, y);
+	glVertex2i(x+w, y);
+	glVertex2i(x+w, y+h);
+	glVertex2i(x  , y+h);
+	glEnd();
+
+}
+
 int main(void)
 {
 	FsOpenWindow(64,16,800,600,1);
 
-	int bx,by,vx,vy,rx,ry,rdx,rdy;
+	Ball ball;
+	Racket racket;
+	Block blocks[10];
 
-	bx=400;
-	by=300;
-	vx=5;
-	vy=-5;
-
-	rx=300;
-	ry=550;
-	rdx=80;
-	rdy=20;
+	for(int i = 0; i < 10; ++i) {
+		blocks[i].y = 30;
+		blocks[i].x = blocks[i].w*i;
+	}
 
 	for(;;)
 	{
@@ -28,36 +127,25 @@ int main(void)
 
 		glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
 
-
-		glColor3ub(0,0,0);
-		glBegin(GL_QUADS);
-		glVertex2i(bx-3,by-3);
-		glVertex2i(bx+3,by-3);
-		glVertex2i(bx+3,by+3);
-		glVertex2i(bx-3,by+3);
-
-		glVertex2i(rx    ,ry);
-		glVertex2i(rx+rdx,ry);
-		glVertex2i(rx+rdx,ry+rdy);
-		glVertex2i(rx    ,ry+rdy);
-
-		glEnd();
-
-
-		bx+=vx;
-		by+=vy;
-
-		if((bx<0 && vx<0) || (800<bx && 0<vx))
-		{
-			vx=-vx;
+		ball.Draw();
+		racket.Draw();
+		for(Block block : blocks){
+			block.Draw();
 		}
-		if((by<0 && vy<0))
+
+		ball.Move();
+
+		if((ball.x<0 && ball.vx<0) || (800<ball.x && 0<ball.vx))
 		{
-			vy=-vy;
+			ball.vx=-ball.vx;
+		}
+		if((ball.y<0 && ball.vy<0))
+		{
+			ball.vy=-ball.vy;
 		}
 
 
-		if(600<by)
+		if(600<ball.y)
 		{
 			printf("Miss!\n");
 			break;
@@ -65,29 +153,42 @@ int main(void)
 
 
 		int lb,mb,rb;
-		FsGetMouseEvent(lb,mb,rb,rx,ry);
-		if(rx<0)
+		FsGetMouseEvent(lb,mb,rb,racket.x,racket.y);
+		if(racket.x<0)
 		{
-			rx=0;
+			racket.x=0;
 		}
-		else if(800<rx)
+		else if(800<racket.x)
 		{
-			rx=800;
+			racket.x=800;
 		}
-		if(ry<500)
+		if(racket.y<500)
 		{
-			ry=500;
+			racket.y=500;
 		}
-		else if(600<ry)
+		else if(600<racket.y)
 		{
-			ry=600;
-		}
-
-		if(rx<=bx && bx<=rx+rdx && ry<=by && by<=ry+rdy && 0<vy)
-		{
-			vy=-vy;
+			racket.y=600;
 		}
 
+		int hasWon = 1;
+		for(Block &block : blocks){
+			if(block.state == 1){
+				hasWon = 0;
+				if(block.HitTest(ball)){
+					block.state = 0;
+					ball.vy=-ball.vy;
+				}
+			}
+		}
+
+		if(hasWon == 1){
+			break;
+		}
+		
+		if(racket.HitTest(ball)){
+			ball.vy=-ball.vy;
+		}
 
 		FsSwapBuffers();
 		FsSleep(25);

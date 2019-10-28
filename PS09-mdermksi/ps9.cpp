@@ -14,16 +14,16 @@ public:
 class Ball : public GameObjectWithVelocity {
 public:
 	Ball();
-	void Draw(void);
+	void Draw(void) const;
 	void Move(void);
 };
 
 class GameObjectHitTest : public GameObject {
 public:
-	int HitTest(Ball &ball);
+	int HitTest(Ball &ball) const;
 };
 
-int GameObjectHitTest::HitTest(Ball &ball) {
+int GameObjectHitTest::HitTest(Ball &ball) const {
 	if(ball.x>=x && ball.x<=x+w && ball.y>=y && ball.y<=y+h)
 	{
 		return 1;
@@ -34,14 +34,14 @@ int GameObjectHitTest::HitTest(Ball &ball) {
 class Racket : public GameObjectHitTest {
 public:
 	Racket();
-	void Draw(void);
+	void Draw(void) const;
 };
 
 class Block : public GameObjectHitTest {
 public:
 	int state;
 	Block();
-	void Draw(void);
+	void Draw(void) const;
 };
 
 Ball::Ball() {
@@ -53,7 +53,7 @@ Ball::Ball() {
 	vy = -5;
 }
 
-void Ball::Draw(void) {
+void Ball::Draw(void) const {
 	glColor3ub(0,0,0);
 	glBegin(GL_QUADS);
 	glVertex2i(x-3,y-3);
@@ -75,7 +75,7 @@ Racket::Racket() {
 	y = 550;
 }
 
-void Racket::Draw(void) {
+void Racket::Draw(void) const {
 	glColor3ub(0,0,0);
 	glBegin(GL_QUADS);
 	glVertex2i(x  , y);
@@ -91,7 +91,7 @@ Block::Block(){
 	h = 20;
 }
 
-void Block::Draw(void) {
+void Block::Draw(void) const {
 	if(state == 0) { return; }
 	glColor3ub(0,0,0);
 	glBegin(GL_QUADS);

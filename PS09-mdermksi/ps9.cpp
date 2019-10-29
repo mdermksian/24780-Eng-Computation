@@ -1,5 +1,10 @@
 #include <stdio.h>
 #include "fssimplewindow.h"
+#include <math.h>
+#include <time.h>
+#include <stdlib.h>
+
+const double MD_PI = 3.1415926;
 
 class GameObject {
 public:
@@ -9,10 +14,12 @@ public:
 class GameObjectWithVelocity : public GameObject {
 public:
 	int vx, vy;
+	double angle;
 };
 
 class Ball : public GameObjectWithVelocity {
 public:
+	int state;
 	Ball();
 	void Draw(void) const;
 	void Move(void);
@@ -45,15 +52,18 @@ public:
 };
 
 Ball::Ball() {
+	state = 1;
 	w = 6;
 	h = 6;
 	x = 400;
 	y = 300;
-	vx = 5;
-	vy = -5;
+	angle = (rand()%30+30)*(MD_PI/180);
+	vx = rand()%2 ? sqrt(5*5*2)*cos(angle) : -sqrt(5*5*2)*cos(angle);
+	vy = -sqrt(5*5*2)*sin(angle);
 }
 
 void Ball::Draw(void) const {
+	if(state == 0) { return; }
 	glColor3ub(0,0,0);
 	glBegin(GL_QUADS);
 	glVertex2i(x-3,y-3);
@@ -64,8 +74,21 @@ void Ball::Draw(void) const {
 }
 
 void Ball::Move() {
+	if(state == 0) { return; }
 	x += vx;
 	y += vy;
+	if((x<0 && vx<0) || (800<x && 0<vx))
+	{
+		vx=-vx;
+	}
+	if((y<0 && vy<0))
+	{
+		vy=-vy;
+	}
+	if(600<y){
+		state = 0;
+		printf("Miss!");
+	}
 }
 
 Racket::Racket() {
@@ -105,9 +128,10 @@ void Block::Draw(void) const {
 
 int main(void)
 {
+	srand((int)time(nullptr));
 	FsOpenWindow(64,16,800,600,1);
 
-	Ball ball;
+	Ball balls[3];
 	Racket racket;
 	Block blocks[10];
 
@@ -127,27 +151,23 @@ int main(void)
 
 		glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
 
-		ball.Draw();
+		for(Ball ball : balls){
+			ball.Draw();
+		}
 		racket.Draw();
 		for(Block block : blocks){
 			block.Draw();
 		}
 
-		ball.Move();
-
-		if((ball.x<0 && ball.vx<0) || (800<ball.x && 0<ball.vx))
-		{
-			ball.vx=-ball.vx;
-		}
-		if((ball.y<0 && ball.vy<0))
-		{
-			ball.vy=-ball.vy;
+		int hasLost = 1;
+		for(Ball &ball : balls){
+			ball.Move();
+			if(ball.state == 1){
+				hasLost = 0;
+			}
 		}
 
-
-		if(600<ball.y)
-		{
-			printf("Miss!\n");
+		if(hasLost){
 			break;
 		}
 
@@ -175,9 +195,11 @@ int main(void)
 		for(Block &block : blocks){
 			if(block.state == 1){
 				hasWon = 0;
-				if(block.HitTest(ball)){
-					block.state = 0;
-					ball.vy=-ball.vy;
+				for(Ball &ball:balls){
+					if(block.HitTest(ball)){
+						block.state = 0;
+						ball.vy=-ball.vy;
+					}
 				}
 			}
 		}
@@ -186,8 +208,10 @@ int main(void)
 			break;
 		}
 		
-		if(racket.HitTest(ball)){
-			ball.vy=-ball.vy;
+		for(Ball &ball:balls){
+			if(racket.HitTest(ball)){
+				ball.vy=-ball.vy;
+			}
 		}
 
 		FsSwapBuffers();

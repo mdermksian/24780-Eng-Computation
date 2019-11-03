@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 class TextBase
 {
@@ -85,47 +86,146 @@ public:
     BowlScore();
     ~BowlScore();
 
-    const char *inputGameString(FILE *fp);
-    void CalculateScore(void);
+    bool inputGameString(FILE *fp);
+    bool isLegalChar(char c);
+    int scoreFromFrame(int pinsKnocked[21], int frameNo);
+    void calculateScore(void);
 
     const char *getGameString(void);
     const int getScore(void);
-    void setScore(int score);
+    void setScore(int num);
 };
 
 BowlScore::BowlScore(){
+    score = 0;
 }
 BowlScore::~BowlScore(){
     clear();
 }
 
-const char *BowlScore::inputGameString(FILE *fp){
+bool BowlScore::isLegalChar(char c){
+    char legalChars[] = {' ','-','0','1','2','3','4','5','6','7','8','9','X','/'};
+    for(char legal : legalChars){
+        if(c == legal){
+            return true;
+        }
+    }
+    return false;
+}
+
+bool BowlScore::inputGameString(FILE *fp){
     clear();
     printf("Enter Frames> ");
-    char buf[22];
-    while (nullptr!=fgets(buf,21,fp))
-    {
-        for(int i = 0; 0!=buf[i]; ++i){
-            if(buf[i] == '\n'){
-                return c_str();
-            }
-            push_back(buf[i]);
+    char buf[23];
+    fgets(buf, 22, fp);
+
+    for(int i = 0; 0!=buf[i]; ++i){
+        push_back(buf[i]);
+        if(i == 20 && buf[i] != '\n'){
+            return true;
         }
-        if(0<size()){
-            return GetPointer();
+        if(buf[i] == '\n'){
+            printf("Error: Frame string is too short\n");
+            clear();
+            return false;
         }
-        return nullptr;
+        if(!isLegalChar(buf[i])){
+            printf("Error: Invalid character in string\n");
+            clear();
+            return false;
+        }
     }
+    return false;
+}
+
+int BowlScore::scoreFromFrame(int pinsKnocked[21], int frameNo){
+    int score;
+    if(frameNo < 9) {
+        int firstPins = pinsKnocked[frameNo*2];
+        int secondPins = pinsKnocked[frameNo*2 + 1];
+        int pinsInFrame = firstPins + secondPins;
+        if(pinsInFrame < 10) {
+            score = pinsInFrame;
+        } else if (firstPins == 10){
+            if(pinsKnocked[frameNo*2 + 2] == 10 && frameNo < 8){
+                score = pinsInFrame + pinsKnocked[frameNo*2 + 2] + pinsKnocked[frameNo*2 + 4];
+            } else {
+                score = pinsInFrame + pinsKnocked[frameNo*2 + 2] + pinsKnocked[frameNo*2 + 3];
+            }
+        } else {
+            score = pinsInFrame + pinsKnocked[frameNo*2 + 2];
+        }
+    } else {
+        int firstPins = pinsKnocked[frameNo*2];
+        int secondPins = pinsKnocked[frameNo*2+1];
+        int thirdPins = pinsKnocked[frameNo*2+2];
+        score = firstPins + secondPins + thirdPins;
+    }
+    printf("Score for frameNo %d: %d\n", frameNo+1, score);
+    return score;
+}
+
+void BowlScore::calculateScore(void){
+    auto gameString = getGameString();
+    int pinsKnocked[21];
+    for(int i = 0; i <= 21; ++i){
+        switch (gameString[i]){
+            case '0':
+            case '-':
+            case ' ':
+                pinsKnocked[i] = 0;
+                break;
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                pinsKnocked[i] = gameString[i]-'0';
+                break;
+            case '/':
+                pinsKnocked[i] = 10-pinsKnocked[i-1];
+                break;
+            case 'X':
+                pinsKnocked[i] = 10;
+                break;
+            default:
+                break;
+        }
+    }
+    for(int pins : pinsKnocked){
+        printf("%d, ", pins);
+    }
+    printf("\n");
+    int curScore = 0;
+    for(int i = 0; i<10; ++i){
+        curScore += scoreFromFrame(pinsKnocked, i);
+    }
+    setScore(curScore);
 }
 
 const char *BowlScore::getGameString(void){
     return c_str();
 }
 
+const int BowlScore::getScore(void){
+    return score;
+}
+
+void BowlScore::setScore(int num){
+    score = num;
+}
+
 int main(void) {
     BowlScore bs;
 
-    bs.inputGameString(stdin);
-
-    printf("%s", bs.getGameString());
+    if(bs.inputGameString(stdin)){
+        printf("%s\n", bs.getGameString());
+        bs.calculateScore();
+        printf("You scored: %d\n", bs.getScore());
+    }
+    return 0;
 }

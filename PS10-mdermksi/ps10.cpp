@@ -161,7 +161,6 @@ int BowlScore::scoreFromFrame(int pinsKnocked[21], int frameNo){
         int thirdPins = pinsKnocked[frameNo*2+2];
         score = firstPins + secondPins + thirdPins;
     }
-    printf("Score for frameNo %d: %d\n", frameNo+1, score);
     return score;
 }
 
@@ -196,10 +195,6 @@ void BowlScore::calculateScore(void){
                 break;
         }
     }
-    for(int pins : pinsKnocked){
-        printf("%d, ", pins);
-    }
-    printf("\n");
     int curScore = 0;
     for(int i = 0; i<10; ++i){
         curScore += scoreFromFrame(pinsKnocked, i);
@@ -223,9 +218,8 @@ int main(void) {
     BowlScore bs;
 
     if(bs.inputGameString(stdin)){
-        printf("%s\n", bs.getGameString());
         bs.calculateScore();
-        printf("You scored: %d\n", bs.getScore());
+        printf("The score is:\n%d\n", bs.getScore());
     }
     return 0;
 }
